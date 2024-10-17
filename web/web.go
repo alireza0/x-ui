@@ -24,9 +24,9 @@ import (
 	"x-ui/web/network"
 	"x-ui/web/service"
 
-	sessions "github.com/Calidity/gin-sessions"
-	"github.com/Calidity/gin-sessions/cookie"
 	"github.com/gin-contrib/gzip"
+	"github.com/gin-contrib/sessions"
+	"github.com/gin-contrib/sessions/cookie"
 	"github.com/gin-gonic/gin"
 	"github.com/robfig/cron/v3"
 )
@@ -332,13 +332,13 @@ func (s *Server) Start() (err error) {
 			}
 			listener = network.NewAutoHttpsListener(listener)
 			listener = tls.NewListener(listener, c)
-			logger.Info("web server run https on", listener.Addr())
+			logger.Info("Web server running HTTPS on", listener.Addr())
 		} else {
-			logger.Error("error in loading certificates: ", err)
-			logger.Info("web server run http on", listener.Addr())
+			logger.Error("Error loading certificates:", err)
+			logger.Info("Web server running HTTP on", listener.Addr())
 		}
 	} else {
-		logger.Info("web server run http on", listener.Addr())
+		logger.Info("Web server running HTTP on", listener.Addr())
 	}
 	s.listener = listener
 
