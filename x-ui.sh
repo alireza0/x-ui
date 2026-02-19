@@ -286,6 +286,16 @@ restart() {
     fi
 }
 
+restart_xray() {
+    systemctl reload x-ui
+    LOGI "xray-core Restart signal sent successfully, Please check the log information to confirm whether xray restarted successfully"
+    sleep 2
+    show_xray_status
+    if [[ $# == 0 ]]; then
+        before_show_menu
+    fi
+}
+
 status() {
     systemctl status x-ui -l
     if [[ $# == 0 ]]; then
@@ -1052,6 +1062,7 @@ show_usage() {
     echo "x-ui start        - Start"
     echo "x-ui stop         - Stop"
     echo "x-ui restart      - Restart"
+    echo "x-ui restart-xray - Restart xray-core"
     echo "x-ui status       - Current Status"
     echo "x-ui settings     - Current Settings"
     echo "x-ui enable       - Enable Autostart on OS Startup"
@@ -1084,19 +1095,20 @@ show_menu() {
   ${green}10.${plain} Start
   ${green}11.${plain} Stop
   ${green}12.${plain} Restart
-  ${green}13.${plain} Check State
-  ${green}14.${plain} Check Logs
+  ${green}13.${plain} Restart Xray
+  ${green}14.${plain} Check State
+  ${green}15.${plain} Check Logs
 ————————————————
-  ${green}15.${plain} Enable Autostart
-  ${green}16.${plain} Disable Autostart
+  ${green}16.${plain} Enable Autostart
+  ${green}17.${plain} Disable Autostart
 ————————————————
-  ${green}17.${plain} SSL Certificate Management
-  ${green}18.${plain} Cloudflare SSL Certificate
-  ${green}19.${plain} Firewall Management
+  ${green}18.${plain} SSL Certificate Management
+  ${green}19.${plain} Cloudflare SSL Certificate
+  ${green}20.${plain} Firewall Management
 ————————————————
-  ${green}20.${plain} Enable or Disable BBR
-  ${green}21.${plain} Update Geo Files
-  ${green}22.${plain} Speedtest by Ookla
+  ${green}21.${plain} Enable or Disable BBR
+  ${green}22.${plain} Update Geo Files
+  ${green}23.${plain} Speedtest by Ookla
  "
     show_status
     echo && read -p "Please enter your selection [0-22]: " num
@@ -1142,37 +1154,40 @@ show_menu() {
         check_install && restart
         ;;
     13)
-        check_install && status
+        check_install && restart_xray
         ;;
     14)
-        check_install && show_log
+        check_install && status
         ;;
     15)
-        check_install && enable
+        check_install && show_log
         ;;
     16)
-        check_install && disable
+        check_install && enable
         ;;
     17)
-        ssl_cert_issue_main
+        check_install && disable
         ;;
     18)
-        ssl_cert_issue_CF
+        ssl_cert_issue_main
         ;;
     19)
-        firewall_menu
+        ssl_cert_issue_CF
         ;;
     20)
-        bbr_menu
+        firewall_menu
         ;;
     21)
-        update_geo
+        bbr_menu
         ;;
     22)
+        update_geo
+        ;;
+    23)
         run_speedtest
         ;;
     *)
-        LOGE "Please enter the correct number [0-22]"
+        LOGE "Please enter the correct number [0-23]"
         ;;
     esac
 }
@@ -1187,6 +1202,9 @@ if [[ $# > 0 ]]; then
         ;;
     "restart")
         check_install 0 && restart 0
+        ;;
+    "restart-xray")
+        check_install 0 && restart_xray 0
         ;;
     "status")
         check_install 0 && status 0

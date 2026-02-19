@@ -392,3 +392,7 @@ func (s *Server) GetCtx() context.Context {
 func (s *Server) GetCron() *cron.Cron {
 	return s.cron
 }
+
+func (s *Server) RestartXray() error {
+	return s.xrayService.RestartXray(true)
+}

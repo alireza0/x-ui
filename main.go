@@ -22,7 +22,6 @@ import (
 
 	"github.com/op/go-logging"
 	"github.com/shirou/gopsutil/v4/net"
-	xrayCore "github.com/xtls/xray-core/core"
 )
 
 func runWebServer() {
@@ -68,7 +67,7 @@ func runWebServer() {
 
 	sigCh := make(chan os.Signal, 1)
 	// Trap shutdown signals
-	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGTERM)
+	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1)
 	for {
 		sig := <-sigCh
 
@@ -98,6 +97,12 @@ func runWebServer() {
 			if err != nil {
 				log.Println(err)
 				return
+			}
+		case syscall.SIGUSR1:
+			logger.Info("Received USR1 signal, restarting xray-core...")
+			err := server.RestartXray()
+			if err != nil {
+				logger.Error("Failed to restart xray-core:", err)
 			}
 		default:
 			server.Stop()
@@ -472,10 +477,4 @@ func main() {
 		fmt.Println()
 		settingCmd.Usage()
 	}
-}
-
-func startXray() {
-	conf := xrayCore.Config{}
-	core, _ := xrayCore.New(&conf)
-	core.Start()
 }
