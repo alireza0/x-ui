@@ -141,7 +141,7 @@ uninstall() {
 }
 
 reset_user() {
-    confirm "Reset your username and password to admin?" "n"
+    confirm "Are you sure to reset the username and password of the panel?" "n"
     if [[ $? != 0 ]]; then
         if [[ $# == 0 ]]; then
             show_menu
