@@ -20,8 +20,7 @@ var defaultJson string
 type SubJsonService struct {
 	configJson       map[string]interface{}
 	defaultOutbounds []json_util.RawMessage
-	fragment         string
-	noises           string
+	fragmentOrNoises bool
 	mux              string
 
 	inboundService service.InboundService
@@ -39,6 +38,31 @@ func NewSubJsonService(fragment string, noises string, mux string, rules string,
 		}
 	}
 
+	fragmentOrNoises := false
+	if fragment != "" || noises != "" {
+		fragmentOrNoises = true
+		defaultOutboundsSettings := map[string]interface{}{
+			"domainStrategy": "UseIP",
+			"redirect":       "",
+		}
+
+		if fragment != "" {
+			defaultOutboundsSettings["fragment"] = json_util.RawMessage(fragment)
+		}
+
+		if noises != "" {
+			defaultOutboundsSettings["noises"] = json_util.RawMessage(noises)
+		}
+
+		defaultDirectOutbound := map[string]interface{}{
+			"protocol": "freedom",
+			"settings": defaultOutboundsSettings,
+			"tag":      "direct_out",
+		}
+		jsonBytes, _ := json.MarshalIndent(defaultDirectOutbound, "", "  ")
+		defaultOutbounds = append(defaultOutbounds, jsonBytes)
+	}
+
 	if rules != "" {
 		var newRules []interface{}
 		routing, _ := configJson["routing"].(map[string]interface{})
@@ -49,19 +73,10 @@ func NewSubJsonService(fragment string, noises string, mux string, rules string,
 		configJson["routing"] = routing
 	}
 
-	if fragment != "" {
-		defaultOutbounds = append(defaultOutbounds, json_util.RawMessage(fragment))
-	}
-
-	if noises != "" {
-		defaultOutbounds = append(defaultOutbounds, json_util.RawMessage(noises))
-	}
-
 	return &SubJsonService{
 		configJson:       configJson,
 		defaultOutbounds: defaultOutbounds,
-		fragment:         fragment,
-		noises:           noises,
+		fragmentOrNoises: fragmentOrNoises,
 		mux:              mux,
 		SubService:       subService,
 	}
@@ -222,8 +237,8 @@ func (s *SubJsonService) streamData(stream string) map[string]interface{} {
 	}
 	delete(streamSettings, "sockopt")
 
-	if s.fragment != "" {
-		streamSettings["sockopt"] = json_util.RawMessage(`{"dialerProxy": "fragment", "tcpKeepAliveIdle": 100, "penetrate": true}`)
+	if s.fragmentOrNoises {
+		streamSettings["sockopt"] = json_util.RawMessage(`{"dialerProxy": "direct_out", "tcpKeepAliveIdle": 100}`)
 	}
 
 	// remove proxy protocol
