@@ -16,6 +16,7 @@ import (
 	"github.com/alireza0/x-ui/database"
 	"github.com/alireza0/x-ui/logger"
 	"github.com/alireza0/x-ui/sub"
+	"github.com/alireza0/x-ui/util/sys"
 	"github.com/alireza0/x-ui/web"
 	"github.com/alireza0/x-ui/web/global"
 	"github.com/alireza0/x-ui/web/service"
@@ -67,7 +68,7 @@ func runWebServer() {
 
 	sigCh := make(chan os.Signal, 1)
 	// Trap shutdown signals
-	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGTERM, syscall.SIGUSR1)
+	signal.Notify(sigCh, syscall.SIGHUP, syscall.SIGTERM, sys.SIGUSR1)
 	for {
 		sig := <-sigCh
 
@@ -98,7 +99,7 @@ func runWebServer() {
 				log.Println(err)
 				return
 			}
-		case syscall.SIGUSR1:
+		case sys.SIGUSR1:
 			logger.Info("Received USR1 signal, restarting xray-core...")
 			err := server.RestartXray()
 			if err != nil {

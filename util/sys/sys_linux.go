@@ -8,7 +8,10 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"syscall"
 )
+
+var SIGUSR1 = syscall.SIGUSR1
 
 func getLinesNum(filename string) (int, error) {
 	file, err := os.Open(filename)

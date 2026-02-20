@@ -4,8 +4,12 @@
 package sys
 
 import (
+	"syscall"
+
 	"github.com/shirou/gopsutil/v4/net"
 )
+
+var SIGUSR1 = syscall.Signal(0)
 
 func GetTCPCount() (int, error) {
 	stats, err := net.Connections("tcp")
