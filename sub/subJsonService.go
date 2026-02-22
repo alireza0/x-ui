@@ -309,19 +309,39 @@ func (s *SubJsonService) genVnext(inbound *model.Inbound, streamSettings json_ut
 
 	outbound.Protocol = string(inbound.Protocol)
 	outbound.Tag = "proxy"
+
 	if s.mux != "" {
 		outbound.Mux = json_util.RawMessage(s.mux)
 	}
+
 	outbound.StreamSettings = streamSettings
-	settings := make(map[string]any)
-	settings["address"] = inbound.Listen
-	settings["port"] = inbound.Port
-	settings["id"] = client.ID
-	if inbound.Protocol == model.VLESS {
-		settings["flow"] = client.Flow
-		settings["encryption"] = encryption
+
+	// Build standard Xray/V2Ray schema
+	user := map[string]any{
+		"id":    client.ID,
+		"level": 8,
 	}
-	outbound.Settings = settings
+
+	if inbound.Protocol == model.VLESS {
+		user["encryption"] = encryption
+		if client.Flow != "" {
+			user["flow"] = client.Flow
+		}
+	} else {
+		// VMess
+		user["alterId"] = 0
+		user["security"] = "auto"
+	}
+
+	vnext := map[string]any{
+		"address": inbound.Listen,
+		"port":    inbound.Port,
+		"users":   []any{user},
+	}
+
+	outbound.Settings = map[string]any{
+		"vnext": []any{vnext},
+	}
 
 	result, _ := json.MarshalIndent(outbound, "", "  ")
 	return result
