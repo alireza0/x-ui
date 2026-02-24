@@ -19,6 +19,13 @@ type InboundService struct {
 	xrayApi xray.XrayAPI
 }
 
+const (
+	// Keep query variables below SQLite's classic 999 limit.
+	safeSQLVariablesPerQuery = 900
+	// Save in small chunks so row-column placeholders stay under SQL var limits.
+	safeSaveBatchSize = 50
+)
+
 func (s *InboundService) GetInbounds(userId int) ([]*model.Inbound, error) {
 	db := database.GetDB()
 	var inbounds []*model.Inbound
@@ -805,9 +812,18 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 		emails = append(emails, traffic.Email)
 	}
 	dbClientTraffics := make([]*xray.ClientTraffic, 0, len(traffics))
-	err = tx.Model(xray.ClientTraffic{}).Where("email IN (?)", emails).Find(&dbClientTraffics).Error
-	if err != nil {
-		return err
+	for start := 0; start < len(emails); start += safeSQLVariablesPerQuery {
+		end := start + safeSQLVariablesPerQuery
+		if end > len(emails) {
+			end = len(emails)
+		}
+
+		batchClientTraffics := make([]*xray.ClientTraffic, 0, end-start)
+		err = tx.Model(xray.ClientTraffic{}).Where("email IN ?", emails[start:end]).Find(&batchClientTraffics).Error
+		if err != nil {
+			return err
+		}
+		dbClientTraffics = append(dbClientTraffics, batchClientTraffics...)
 	}
 
 	// Avoid empty slice error
@@ -836,11 +852,21 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 	}
 
 	// Set onlineUsers
-	p.SetOnlineClients(onlineClients)
+	if p != nil {
+		p.SetOnlineClients(onlineClients)
+	}
 
-	err = tx.Save(dbClientTraffics).Error
-	if err != nil {
-		logger.Warning("AddClientTraffic update data ", err)
+	for start := 0; start < len(dbClientTraffics); start += safeSaveBatchSize {
+		end := start + safeSaveBatchSize
+		if end > len(dbClientTraffics) {
+			end = len(dbClientTraffics)
+		}
+
+		err = tx.Save(dbClientTraffics[start:end]).Error
+		if err != nil {
+			logger.Warning("AddClientTraffic update data ", err)
+			return nil
+		}
 	}
 
 	return nil
@@ -848,17 +874,31 @@ func (s *InboundService) addClientTraffic(tx *gorm.DB, traffics []*xray.ClientTr
 
 func (s *InboundService) adjustTraffics(tx *gorm.DB, dbClientTraffics []*xray.ClientTraffic) ([]*xray.ClientTraffic, error) {
 	inboundIds := make([]int, 0, len(dbClientTraffics))
+	seenInboundIds := make(map[int]struct{}, len(dbClientTraffics))
 	for _, dbClientTraffic := range dbClientTraffics {
 		if dbClientTraffic.ExpiryTime < 0 {
+			if _, seen := seenInboundIds[dbClientTraffic.InboundId]; seen {
+				continue
+			}
 			inboundIds = append(inboundIds, dbClientTraffic.InboundId)
+			seenInboundIds[dbClientTraffic.InboundId] = struct{}{}
 		}
 	}
 
 	if len(inboundIds) > 0 {
-		var inbounds []*model.Inbound
-		err := tx.Model(model.Inbound{}).Where("id IN (?)", inboundIds).Find(&inbounds).Error
-		if err != nil {
-			return nil, err
+		inbounds := make([]*model.Inbound, 0, len(inboundIds))
+		for start := 0; start < len(inboundIds); start += safeSQLVariablesPerQuery {
+			end := start + safeSQLVariablesPerQuery
+			if end > len(inboundIds) {
+				end = len(inboundIds)
+			}
+
+			batchInbounds := make([]*model.Inbound, 0, end-start)
+			err := tx.Model(model.Inbound{}).Where("id IN ?", inboundIds[start:end]).Find(&batchInbounds).Error
+			if err != nil {
+				return nil, err
+			}
+			inbounds = append(inbounds, batchInbounds...)
 		}
 		for inbound_index := range inbounds {
 			settings := map[string]interface{}{}
@@ -888,10 +928,19 @@ func (s *InboundService) adjustTraffics(tx *gorm.DB, dbClientTraffics []*xray.Cl
 				inbounds[inbound_index].Settings = string(modifiedSettings)
 			}
 		}
-		err = tx.Save(inbounds).Error
-		if err != nil {
-			logger.Warning("AddClientTraffic update inbounds ", err)
-			logger.Error(inbounds)
+
+		for start := 0; start < len(inbounds); start += safeSaveBatchSize {
+			end := start + safeSaveBatchSize
+			if end > len(inbounds) {
+				end = len(inbounds)
+			}
+
+			err := tx.Save(inbounds[start:end]).Error
+			if err != nil {
+				logger.Warning("AddClientTraffic update inbounds ", err)
+				logger.Error(inbounds[start:end])
+				break
+			}
 		}
 	}
 
