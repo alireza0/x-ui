@@ -75,20 +75,12 @@ func (a *IndexController) login(c *gin.Context) {
 		a.tgbot.UserLoginNotify(safeUser, getRemoteIp(c), timeStr, 1)
 	}
 
-	sessionMaxAge, err := a.settingService.GetSessionMaxAge()
-	if err != nil {
-		logger.Info("Unable to get session's max age from DB")
-	}
-
-	if sessionMaxAge > 0 {
-		err = session.SetMaxAge(c, sessionMaxAge*60)
-		if err != nil {
-			logger.Info("Unable to set session's max age")
-		}
-	}
-
 	err = session.SetLoginUser(c, user)
-	logger.Infof("%s logged in successfully", user.Username)
+	if err == nil {
+		logger.Infof("%s logged in successfully", user.Username)
+	} else {
+		logger.Error("Unable to set login user")
+	}
 	jsonMsg(c, I18nWeb(c, "pages.login.toasts.successLogin"), err)
 }
 

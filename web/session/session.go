@@ -19,20 +19,7 @@ func init() {
 
 func SetLoginUser(c *gin.Context, user *model.User) error {
 	s := sessions.Default(c)
-	s.Options(sessions.Options{
-		Path:     "/",
-		HttpOnly: true,
-	})
 	s.Set(loginUser, user)
-	return s.Save()
-}
-
-func SetMaxAge(c *gin.Context, maxAge int) error {
-	s := sessions.Default(c)
-	s.Options(sessions.Options{
-		Path:   "/",
-		MaxAge: maxAge,
-	})
 	return s.Save()
 }
 
@@ -53,8 +40,12 @@ func IsLogin(c *gin.Context) bool {
 func ClearSession(c *gin.Context) {
 	s := sessions.Default(c)
 	s.Clear()
+	basePath := c.GetString("base_path")
+	if basePath == "" {
+		basePath = "/"
+	}
 	s.Options(sessions.Options{
-		Path:   "/",
+		Path:   basePath,
 		MaxAge: -1,
 	})
 	s.Save()

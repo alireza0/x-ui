@@ -176,10 +176,23 @@ func (s *Server) initRouter() (*gin.Engine, error) {
 	if err != nil {
 		return nil, err
 	}
+
+	sessionMaxAge, err := s.settingService.GetSessionMaxAge()
+	if err != nil {
+		return nil, err
+	}
 	engine.Use(gzip.Gzip(gzip.DefaultCompression, gzip.WithExcludedPaths([]string{basePath + "xui/API/"})))
 	assetsBasePath := basePath + "assets/"
 
 	store := cookie.NewStore(secret)
+	sessionOptions := sessions.Options{
+		Path:     basePath,
+		HttpOnly: true,
+	}
+	if sessionMaxAge > 0 {
+		sessionOptions.MaxAge = sessionMaxAge * 60
+	}
+	store.Options(sessionOptions)
 	engine.Use(sessions.Sessions("x-ui", store))
 	engine.Use(func(c *gin.Context) {
 		c.Set("base_path", basePath)

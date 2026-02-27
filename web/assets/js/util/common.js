@@ -95,10 +95,13 @@ function getCookie(cname) {
 }
 
 function setCookie(cname, cvalue, exdays) {
-    const d = new Date();
-    d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
-    let expires = "expires=" + d.toUTCString();
-    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=/";
+    let expires = "";
+    if (exdays > 0) {
+        const d = new Date();
+        d.setTime(d.getTime() + exdays * 24 * 60 * 60 * 1000);
+        expires = "expires=" + d.toUTCString();
+    }
+    document.cookie = cname + "=" + cvalue + ";" + expires + ";path=" + axios.defaults.baseURL;
 }
 
 function usageColor(data, threshold, total) {

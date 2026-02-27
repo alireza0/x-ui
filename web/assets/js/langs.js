@@ -34,13 +34,13 @@ function getLang() {
             lang = window.navigator.language || window.navigator.userLanguage;
 
             if (isSupportLang(lang)) {
-                setCookie('lang', lang, 150);
+                setCookie('lang', lang);
             } else {
-                setCookie('lang', 'en-US', 150);
+                setCookie('lang', 'en-US');
                 window.location.reload();
             }
         } else {
-            setCookie('lang', 'en-US', 150);
+            setCookie('lang', 'en-US');
             window.location.reload();
         }
     }
@@ -53,7 +53,7 @@ function setLang(lang) {
         lang = 'en-US';
     }
 
-    setCookie('lang', lang, 150);
+    setCookie('lang', lang);
     window.location.reload();
 }
 
