@@ -723,17 +723,60 @@
     </template>
     <!-- masque -->
     <template v-if="outbound.stream.network === 'masque'">
-        <a-form-item label='{{ i18n "username" }}'>
-            <a-input v-model.trim="outbound.stream.masque.user"></a-input>
+        <a-form-item>
+            <template slot="label">
+                <a-tooltip>
+                    <template slot="title">
+                        <span>{{ i18n "pages.outbounds.warpDesc" }}</span>
+                    </template>
+                    Cloudflare WARP <a-icon type="question-circle"></a-icon>
+                </a-tooltip>
+            </template>
+            <a-switch v-model="outbound.stream.masque.warpSwitch"></a-switch>
         </a-form-item>
-        <a-form-item label='{{ i18n "password" }}'>
-            <a-input v-model.trim="outbound.stream.masque.pass"></a-input>
-        </a-form-item>
+        <template v-if="outbound.stream.masque.warp">
+            <a-form-item>
+                <template slot="label">
+                    <a-tooltip>
+                        <template slot="title">
+                            <span>{{ i18n "pages.outbounds.warpPrivateKeyDesc" }}</span>
+                        </template>
+                        {{ i18n "pages.inbounds.stream.reality.privateKey" }} <a-icon type="question-circle"></a-icon>
+                    </a-tooltip>
+                </template>
+                <a-textarea v-model.trim="outbound.stream.masque.warp.privateKey" :auto-size="{ minRows: 2, maxRows: 6 }"></a-textarea>
+            </a-form-item>
+            <a-form-item>
+                <template slot="label">
+                    <a-tooltip>
+                        <template slot="title">
+                            <span>{{ i18n "pages.outbounds.warpPublicKeyDesc" }}</span>
+                        </template>
+                        {{ i18n "pages.inbounds.stream.reality.publicKey" }} <a-icon type="question-circle"></a-icon>
+                    </a-tooltip>
+                </template>
+                <a-textarea v-model.trim="outbound.stream.masque.warp.publicKey" :auto-size="{ minRows: 2, maxRows: 6 }"></a-textarea>
+            </a-form-item>
+            <a-form-item label='{{ i18n "pages.inbounds.masque.address" }}'>
+                <a-select mode="tags" v-model="outbound.stream.masque.warp.address" :token-separators="[',', ' ']"
+                    :dropdown-class-name="themeSwitcher.currentTheme" placeholder="172.16.0.2/32"></a-select>
+            </a-form-item>
+        </template>
+        <template v-else>
+            <a-form-item label='{{ i18n "username" }}'>
+                <a-input v-model.trim="outbound.stream.masque.user"></a-input>
+            </a-form-item>
+            <a-form-item label='{{ i18n "password" }}'>
+                <a-input v-model.trim="outbound.stream.masque.pass"></a-input>
+            </a-form-item>
+        </template>
         <a-form-item label='{{ i18n "host" }}'>
-            <a-input v-model.trim="outbound.stream.masque.host"></a-input>
+            <a-input v-model.trim="outbound.stream.masque.host"
+                :placeholder="outbound.stream.masque.warp ? 'cloudflareaccess.com' : ''"></a-input>
         </a-form-item>
         <a-form-item label='{{ i18n "path" }}'>
-            <a-input v-model.trim="outbound.stream.masque.path" placeholder="/.well-known/masque/ip/{target}/{ipproto}/"></a-input>
+            <a-input v-model.trim="outbound.stream.masque.path"
+                :placeholder="outbound.stream.masque.warp ? '/' : '/.well-known/masque/ip/{target}/{ipproto}/'"></a-input>
         </a-form-item>
         <a-form-item label='{{ i18n "pages.inbounds.stream.tcp.requestHeader" }}'>
             <a-button icon="plus" size="small" @click="outbound.stream.masque.addHeader('', '')"></a-button>

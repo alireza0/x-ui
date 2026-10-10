@@ -1485,14 +1485,25 @@ class XDriveStreamSettings extends CommonClass {
 }
 
 // MASQUE (CONNECT-IP) over h3, or h2 when the TLS ALPN offers h2 but not h3.
+// With "warp" it connects to Cloudflare WARP, signing in with the device's P-256
+// key instead of user/pass; host and path then default to WARP's.
 class MasqueStreamSettings extends CommonClass {
-    constructor(host = '', path = '', user = '', pass = '', headers = []) {
+    constructor(host = '', path = '', user = '', pass = '', headers = [], warp = undefined) {
         super();
         this.host = host;
         this.path = path;
         this.user = user;
         this.pass = pass;
         this.headers = headers;
+        this.warp = warp;
+    }
+
+    get warpSwitch() {
+        return !!this.warp;
+    }
+
+    set warpSwitch(value) {
+        this.warp = value ? { privateKey: '', publicKey: '', address: [] } : undefined;
     }
 
     addHeader(name, value) {
@@ -1504,12 +1515,18 @@ class MasqueStreamSettings extends CommonClass {
     }
 
     static fromJson(json = {}) {
+        const warp = json.warp && typeof json.warp === 'object' ? {
+            privateKey: json.warp.privateKey || '',
+            publicKey: json.warp.publicKey || '',
+            address: [].concat(json.warp.address || []),
+        } : undefined;
         return new MasqueStreamSettings(
             json.host,
             json.path,
             json.user,
             json.pass,
             Object.entries(json.headers || {}).map(([name, value]) => ({ name, value })),
+            warp,
         );
     }
 
@@ -1521,9 +1538,15 @@ class MasqueStreamSettings extends CommonClass {
         return {
             host: CommonClass.shrinkObject(this.host),
             path: CommonClass.shrinkObject(this.path),
-            user: CommonClass.shrinkObject(this.user),
-            pass: CommonClass.shrinkObject(this.pass),
+            // the core refuses user/pass together with warp
+            user: this.warp ? undefined : CommonClass.shrinkObject(this.user),
+            pass: this.warp ? undefined : CommonClass.shrinkObject(this.pass),
             headers: CommonClass.shrinkObject(headers),
+            warp: this.warp ? {
+                privateKey: this.warp.privateKey,
+                publicKey: this.warp.publicKey,
+                address: this.warp.address,
+            } : undefined,
         };
     }
 }
