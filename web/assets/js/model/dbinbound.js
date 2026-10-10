@@ -60,6 +60,10 @@ class DBInbound {
         return this.protocol === Protocols.WIREGUARD;
     }
 
+    get isMasque() {
+        return this.protocol === Protocols.MASQUE;
+    }
+
     get address() {
         let address = location.hostname;
         if (!ObjectUtil.isEmpty(this.listen) && this.listen !== "0.0.0.0") {

@@ -34,7 +34,8 @@
          width="560px" :class="themeSwitcher.currentTheme">
     <a-collapse v-model="qrModal.activeKey">
         <template v-if="app.subSettings.enable && qrModal.subId">
-            <a-collapse-panel key="sub" :force-render="true">
+            <!-- MASQUE has no share link format, so only the JSON subscription carries it -->
+            <a-collapse-panel v-if="qrModal.dbInbound.protocol !== Protocols.MASQUE" key="sub" :force-render="true">
                 <span slot="header">{{ i18n "pages.settings.subSettings" }}</span>
                 <div class="qr-panel-actions">
                     <a-button size="small" icon="copy" @click.stop="copyToClipboard(genSubLink(qrModal.subId))"></a-button>

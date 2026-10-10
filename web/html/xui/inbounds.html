@@ -1291,6 +1291,12 @@
                 newDbInbound = this.checkFallback(dbInbound);
                 txtModal.show('{{ i18n "pages.inbounds.export"}}', newDbInbound.genInboundLinks(this.remarkModel), newDbInbound.remark);
             },
+            // MASQUE has no share link format, so its clients only work through
+            // the JSON subscription; the plain one answers them with an error.
+            subLinkFor(dbInbound, subId) {
+                if (dbInbound.protocol === Protocols.MASQUE) return this.subSettings.subJsonURI + subId;
+                return this.subSettings.subURI + subId + "?name=" + subId;
+            },
             exportSubs(dbInboundId) {
                 const dbInbound = this.dbInbounds.find(row => row.id === dbInboundId);
                 const clients = this.getInboundClients(dbInbound);
@@ -1298,7 +1304,7 @@
                 if (clients != null){
                     clients.forEach(c => {
                         if (c.subId && c.subId.length>0){
-                            subLinks.push(this.subSettings.subURI + c.subId + "?name=" + c.subId)
+                            subLinks.push(this.subLinkFor(dbInbound, c.subId))
                         }
                     })
                 }
@@ -1325,7 +1331,7 @@
                     if (clients != null){
                         clients.forEach(c => {
                             if (c.subId && c.subId.length>0){
-                                subLinks.push(this.subSettings.subURI + c.subId + "?name=" + c.subId)
+                                subLinks.push(this.subLinkFor(dbInbound, c.subId))
                             }
                         })
                     }
