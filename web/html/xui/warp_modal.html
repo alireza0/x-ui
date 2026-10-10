@@ -25,6 +25,13 @@
             </tr>
         </table>
         <a-button @click="delConfig" :loading="warpModal.confirmLoading" type="danger">{{ i18n "delete" }}</a-button>
+        <a-divider style="margin: 10px 0 0;">{{ i18n "pages.xray.outbound.tunnel" }}</a-divider>
+        <a-alert type="warning" message='{{ i18n "pages.xray.outbound.tunnelSwitchWarning" }}' show-icon style="margin: 10px 0;"></a-alert>
+        <a-radio-group :value="warpModal.warpData.tunnel || 'wireguard'" @change="e => setTunnel(e.target.value)"
+            :disabled="warpModal.confirmLoading" button-style="solid" style="margin-bottom: 10px;">
+            <a-radio-button value="wireguard">WireGuard</a-radio-button>
+            <a-radio-button value="masque">MASQUE</a-radio-button>
+        </a-radio-group>
         <a-divider style="margin: 0;">{{ i18n "pages.xray.outbound.settings" }}</a-divider>
         <a-collapse style="margin: 10px 0;">
             <a-collapse-panel header='WARP/WARP+ License Key'>
@@ -131,7 +138,30 @@ new Vue({
         collectConfig() {
             config = warpModal.warpConfig.config;
             peer = config.peers[0];
-            if(config){
+            const data = warpModal.warpData;
+            if(config && data.tunnel === 'masque'){
+                // the endpoint key checks the server certificate, so the SNI only has to look right
+                warpModal.warpOutbound = Outbound.fromJson({
+                    tag: 'warp',
+                    protocol: Protocols.Masque,
+                    settings: {
+                        address: data.masque_endpoint || '162.159.198.1',
+                        port: 443,
+                    },
+                    streamSettings: {
+                        network: 'masque',
+                        security: 'tls',
+                        tlsSettings: { serverName: 'consumer-masque.cloudflareclient.com' },
+                        masqueSettings: {
+                            warp: {
+                                privateKey: data.masque_private_key,
+                                publicKey: data.masque_endpoint_key,
+                                address: this.getAddresses(config.interface.addresses),
+                            },
+                        },
+                    },
+                });
+            } else if(config){
                 warpModal.warpOutbound = Outbound.fromJson({
                     tag: 'warp',
                     protocol: Protocols.Wireguard,
@@ -190,6 +220,17 @@ new Vue({
                 warpModal.warpData = JSON.parse(msg.obj);
                 warpModal.warpConfig = null;
                 this.warpPlus = '';
+            }
+            warpModal.loading(false);
+        },
+        async setTunnel(tunnel){
+            warpModal.loading(true);
+            const msg = await HttpUtil.post('/xui/xray/warp/tunnel', {tunnel: tunnel});
+            if (msg.success) {
+                const resp = JSON.parse(msg.obj);
+                warpModal.warpData = resp.data;
+                warpModal.warpConfig = resp.config;
+                this.collectConfig();
             }
             warpModal.loading(false);
         },

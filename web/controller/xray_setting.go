@@ -114,6 +114,8 @@ func (a *XraySettingController) warp(c *gin.Context) {
 	case "license":
 		license := c.PostForm("license")
 		resp, err = a.WarpService.SetWarpLicense(license)
+	case "tunnel":
+		resp, err = a.WarpService.SetWarpTunnel(c.PostForm("tunnel"))
 	}
 
 	jsonObj(c, resp, err)

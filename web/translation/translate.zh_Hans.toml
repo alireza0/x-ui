@@ -728,6 +728,8 @@
 "type" = "类型"
 "settings" = "设置"
 "accountInfo" = "帐户信息"
+"tunnel" = "隧道"
+"tunnelSwitchWarning" = "每个设备只有一个密钥：切换时会向 Cloudflare 注册新密钥，另一种隧道的出站将失效，直到重置 WARP 出站。"
 "outboundStatus" = "出站状态"
 "reverseTag" = "反向标签"
 "reverseTagDesc" = "此 VLESS 客户端使用的反向代理 inbound 标签。"

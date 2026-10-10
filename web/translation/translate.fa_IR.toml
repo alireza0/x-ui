@@ -728,6 +728,8 @@
 "type" = "نوع"
 "settings" = "تنظیمات"
 "accountInfo" = "اطلاعات حساب"
+"tunnel" = "تونل"
+"tunnelSwitchWarning" = "هر دستگاه فقط یک کلید دارد: تغییر تونل کلید جدیدی در Cloudflare ثبت می‌کند و خروجی تونل قبلی تا وقتی خروجی WARP را بازنشانی نکنید کار نمی‌کند."
 "outboundStatus" = "وضعیت خروجی"
 "reverseTag" = "برچسب معکوس"
 "reverseTagDesc" = "برچسب inbound پروکسی معکوسی که این کلاینت VLESS به آن متصل می‌شود."

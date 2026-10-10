@@ -728,6 +728,8 @@
 "type" = "Type"
 "settings" = "Settings"
 "accountInfo" = "Account Information"
+"tunnel" = "Tunnel"
+"tunnelSwitchWarning" = "A device holds one key: switching enrolls a new one with Cloudflare, and the outbound of the other tunnel stops working until you reset the WARP outbound."
 "outboundStatus" = "Outbound Status"
 "reverseTag" = "Reverse Tag"
 "reverseTagDesc" = "The tag of the reverse proxy inbound that this VLESS client uses."

@@ -728,6 +728,8 @@
 "type" = "Kiểu"
 "settings" = "cài đặt"
 "accountInfo" = "Thông tin tài khoản"
+"tunnel" = "Đường hầm"
+"tunnelSwitchWarning" = "Mỗi thiết bị chỉ có một khóa: khi chuyển, khóa mới được đăng ký với Cloudflare và outbound của đường hầm kia ngừng hoạt động cho đến khi bạn đặt lại outbound WARP."
 "outboundStatus" = "Trạng thái đầu ra"
 "reverseTag" = "Thẻ đảo ngược"
 "reverseTagDesc" = "Thẻ inbound reverse proxy mà client VLESS này sử dụng."

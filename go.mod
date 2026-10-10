@@ -18,6 +18,7 @@ require (
 	github.com/shirou/gopsutil/v4 v4.26.9
 	github.com/xtls/xray-core v1.260327.1-0.20261010092107-701af60772cd
 	go.uber.org/atomic v1.12.0
+	golang.org/x/crypto v0.57.0
 	golang.org/x/sys v0.49.0
 	golang.org/x/text v0.43.0
 	google.golang.org/grpc v1.84.0
@@ -90,7 +91,6 @@ require (
 	go.mongodb.org/mongo-driver/v2 v2.8.0 // indirect
 	go4.org/netipx v0.0.0-20231129151722-fdeea329fbba // indirect
 	golang.org/x/arch v0.30.0 // indirect
-	golang.org/x/crypto v0.57.0 // indirect
 	golang.org/x/crypto/x509roots/fallback v0.0.0-20261005185213-c3db4df58582 // indirect
 	golang.org/x/exp v0.0.0-20260312153236-7ab1446f8b90 // indirect
 	golang.org/x/net v0.59.0 // indirect
