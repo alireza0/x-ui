@@ -252,6 +252,8 @@
 "echConfigList" = "ECH 配置列表"
 "verifyPeerCertByName" = "按名称验证 Peer 证书"
 "pinnedPeerCert" = "固定 Peer 证书"
+"useSystemCA" = "使用系统 CA"
+"useSystemCADesc" = "信任操作系统的证书库，而不是 Xray 内置的根 CA。服务器证书由私有 CA 签发时需要开启。"
 "shortID" = "Short ID"
 "addressPortStrategy" = "地址端口策略"
 "keepAliveInterval" = "Keep Alive 间隔"

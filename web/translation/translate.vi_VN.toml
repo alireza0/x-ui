@@ -252,6 +252,8 @@
 "echConfigList" = "ECH Config List"
 "verifyPeerCertByName" = "Xác minh Peer Cert theo tên"
 "pinnedPeerCert" = "Peer Cert đã ghim"
+"useSystemCA" = "Dùng CA hệ thống"
+"useSystemCADesc" = "Tin cậy kho chứng chỉ của hệ điều hành thay vì các CA gốc tích hợp trong Xray. Cần khi chứng chỉ máy chủ được ký bởi CA riêng."
 "shortID" = "Short ID"
 "addressPortStrategy" = "Chiến lược địa chỉ-cổng"
 "keepAliveInterval" = "Keep Alive Interval"

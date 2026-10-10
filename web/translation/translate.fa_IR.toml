@@ -252,6 +252,8 @@
 "echConfigList" = "لیست ECH Config"
 "verifyPeerCertByName" = "تأیید گواهی Peer با نام"
 "pinnedPeerCert" = "گواهی Peer ثابت"
+"useSystemCA" = "استفاده از CA سیستم"
+"useSystemCADesc" = "به جای CAهای ریشه‌ی داخلی Xray به گواهی‌های سیستم‌عامل اعتماد می‌کند. برای سروری که گواهی‌اش با یک CA خصوصی امضا شده لازم است."
 "shortID" = "Short ID"
 "addressPortStrategy" = "استراتژی آدرس و پورت"
 "keepAliveInterval" = "بازه Keep Alive"

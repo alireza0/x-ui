@@ -251,6 +251,8 @@
 "echConfigList" = "ECH Config List"
 "verifyPeerCertByName" = "Verify Peer Cert By Name"
 "pinnedPeerCert" = "Pinned Peer Cert"
+"useSystemCA" = "Use System CA"
+"useSystemCADesc" = "Trust the operating system's certificate store instead of the root CAs built into Xray. Needed when the server's certificate is signed by a private CA."
 "shortID" = "Short ID"
 "addressPortStrategy" = "Address Port Strategy"
 "keepAliveInterval" = "Keep Alive Interval"

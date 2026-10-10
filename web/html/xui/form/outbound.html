@@ -1196,6 +1196,17 @@
             <a-form-item label='{{ i18n "pages.inbounds.stream.tls.allowInsecure" }}'>
                 <a-switch v-model="outbound.stream.tls.allowInsecure"></a-switch>
             </a-form-item>
+            <a-form-item>
+                <template slot="label">
+                    <a-tooltip>
+                        <template slot="title">
+                            <span>{{ i18n "pages.outbounds.useSystemCADesc" }}</span>
+                        </template>
+                        {{ i18n "pages.outbounds.useSystemCA" }} <a-icon type="question-circle"></a-icon>
+                    </a-tooltip>
+                </template>
+                <a-switch v-model="outbound.stream.tls.useSystemCA"></a-switch>
+            </a-form-item>
             <a-form-item label='{{ i18n "pages.outbounds.verifyPeerCertByName" }}'>
                 <a-input v-model.trim="outbound.stream.tls.verifyPeerCertByName"></a-input>
             </a-form-item>

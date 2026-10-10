@@ -252,6 +252,8 @@
 "echConfigList" = "Список ECH Config"
 "verifyPeerCertByName" = "Проверка Peer Cert по имени"
 "pinnedPeerCert" = "Закреплённый Peer Cert"
+"useSystemCA" = "Системные CA"
+"useSystemCADesc" = "Доверять хранилищу сертификатов ОС вместо корневых CA, встроенных в Xray. Нужно, если сертификат сервера подписан частным CA."
 "shortID" = "Short ID"
 "addressPortStrategy" = "Стратегия адрес/порт"
 "keepAliveInterval" = "Keep Alive интервал"

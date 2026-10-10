@@ -582,6 +582,7 @@ class TlsStreamSettings extends CommonClass {
         curvePreferences = [],
         masterKeyLog = '',
         echSockopt = undefined,
+        useSystemCA = false,
     ) {
         super();
         this.serverName = serverName;
@@ -596,6 +597,7 @@ class TlsStreamSettings extends CommonClass {
             : (curvePreferences ? curvePreferences.split(",").map(c => c.trim()).filter(c => c.length > 0) : []);
         this.masterKeyLog = masterKeyLog;
         this.echSockopt = echSockopt;
+        this.useSystemCA = !!useSystemCA;
     }
 
     get echSockoptSwitch() {
@@ -618,6 +620,7 @@ class TlsStreamSettings extends CommonClass {
             json.curvePreferences,
             json.masterKeyLog,
             ObjectUtil.isEmpty(json.echSockopt) ? undefined : SockoptStreamSettings.fromJson(json.echSockopt),
+            json.useSystemCA,
         );
     }
 
@@ -646,6 +649,7 @@ class TlsStreamSettings extends CommonClass {
             curvePreferences: CommonClass.shrinkObject(this.curvePreferences),
             masterKeyLog: CommonClass.shrinkObject(this.masterKeyLog),
             echSockopt: this.echSockopt ? this.echSockopt.toJson() : undefined,
+            useSystemCA: this.useSystemCA || undefined,
         };
     }
 }
