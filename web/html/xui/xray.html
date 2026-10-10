@@ -150,6 +150,7 @@
                                             </a-col>
                                         </a-row>
                                     </a-list-item>
+                                    <setting-list-item type="text" title='{{ i18n "pages.xray.routingScript" }}' desc='{{ i18n "pages.xray.scriptDesc" }}' placeholder="route.lua" v-model="routingScript"></setting-list-item>
                                 </a-collapse-panel>
                                 <a-collapse-panel header='{{ i18n "pages.xray.logConfigs" }}'>
                                     <a-row :xs="24" :sm="24" :lg="12">
@@ -327,6 +328,7 @@
                                         </a-col>
                                     </a-row>
                                 </a-list-item>
+                                <setting-list-item type="text" title='{{ i18n "pages.xray.dns.script" }}' desc='{{ i18n "pages.xray.scriptDesc" }}' placeholder="dns.lua" v-model="dnsScript"></setting-list-item>
                                 <a-divider>DNS</a-divider>
                                 <a-button type="primary" icon="plus" @click="addDNSServer()" style="margin-bottom: 10px;">{{ i18n "pages.xray.dns.add" }}</a-button>
                                 <a-table :columns="dnsColumns" bordered v-if="dnsServers.length>0"
@@ -1186,6 +1188,18 @@
                     this.templateSettings = newTemplateSettings;
                 }
             },
+            routingScript: {
+                get: function () {
+                    if (!this.templateSettings || !this.templateSettings.routing) return "";
+                    return this.templateSettings.routing.script || "";
+                },
+                set: function (newValue) {
+                    newTemplateSettings = this.templateSettings;
+                    if (newValue.trim()) newTemplateSettings.routing.script = newValue.trim();
+                    else delete newTemplateSettings.routing.script;
+                    this.templateSettings = newTemplateSettings;
+                }
+            },
             familyProtectSettings: {
                 get: function () {
                     if (!this.templateSettings || !this.templateSettings.dns || !this.templateSettings.dns.servers) return false;
@@ -1230,6 +1244,17 @@
                 set: function (newValue) {
                     newTemplateSettings = this.templateSettings;
                     newTemplateSettings.dns.tag =  newValue;
+                    this.templateSettings = newTemplateSettings;
+                }
+            },
+            dnsScript: {
+                get: function () {
+                    return this.enableDNS ? (this.templateSettings.dns.script || "") : "";
+                },
+                set: function (newValue) {
+                    newTemplateSettings = this.templateSettings;
+                    if (newValue.trim()) newTemplateSettings.dns.script = newValue.trim();
+                    else delete newTemplateSettings.dns.script;
                     this.templateSettings = newTemplateSettings;
                 }
             },

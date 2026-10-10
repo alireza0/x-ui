@@ -3,6 +3,17 @@
   :mask-closable="false" :ok-text="dnsModal.okText" cancel-text='{{ i18n "close" }}'
   :class="themeSwitcher.currentTheme">
   <a-form :colon="false" :label-col="{ md: {span:8} }" :wrapper-col="{ md: {span:14} }">
+    <a-form-item>
+      <template slot="label">
+        <a-tooltip>
+          <template slot="title">
+            <span>{{ i18n "pages.xray.dns.idDesc" }}</span>
+          </template>
+          ID <a-icon type="question-circle"></a-icon>
+        </a-tooltip>
+      </template>
+      <a-input v-model.trim="dnsModal.dnsServer.id"></a-input>
+    </a-form-item>
     <a-form-item label='{{ i18n "address" }}'>
       <a-input v-model.trim="dnsModal.dnsServer.address"></a-input>
     </a-form-item>
@@ -43,6 +54,7 @@
     isEdit: false,
     confirm: null,
     dnsServer: {
+      id: '',
       address: "localhost",
       domains: [],
       expectIPs: [],
@@ -54,7 +66,9 @@
       expectIPs = dnsModal.dnsServer.expectIPs.filter(ip => ip.length > 0);
       dnsModal.dnsServer.domains = domains;
       dnsModal.dnsServer.expectIPs = expectIPs;
-      newDnsServer = (domains.length > 0 || expectIPs.length > 0) ? dnsModal.dnsServer : dnsModal.dnsServer.address;
+      if (!dnsModal.dnsServer.id) delete dnsModal.dnsServer.id;
+      // a bare address string cannot carry the id a DNS script looks servers up by
+      newDnsServer = (domains.length > 0 || expectIPs.length > 0 || dnsModal.dnsServer.id) ? dnsModal.dnsServer : dnsModal.dnsServer.address;
       ObjectUtil.execute(dnsModal.confirm, newDnsServer);
     },
 
@@ -71,9 +85,10 @@
       this.visible = true;
       if (isEdit) {
         if (typeof dnsServer == 'object') {
-          this.dnsServer = dnsServer;
+          this.dnsServer = { id: '', domains: [], expectIPs: [], ...dnsServer };
         } else {
           this.dnsServer = {
+            id: '',
             address: dnsServer ?? "",
             domains: [],
             expectIPs: [],
@@ -83,6 +98,7 @@
         }
       } else {
         this.dnsServer = {
+          id: '',
           address: "localhost",
           domains: [],
           expectIPs: [],
