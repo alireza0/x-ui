@@ -2,6 +2,11 @@ name: Release X-UI
 
 on:
   workflow_dispatch:
+    inputs:
+      docker:
+        description: Also build and push the Docker image, tagged with the branch name
+        type: boolean
+        default: false
   release:
     types: [published]
   push:
@@ -49,10 +54,26 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Setup Go
+        id: go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
           check-latest: true
+          # setup-go's cache key does not include the target platform, so every
+          # matrix job would share one entry holding only one platform's build
+          # cache. Each platform keeps its own below.
+          cache: false
+
+      - name: Restore Go cache
+        id: go-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-release-${{ matrix.platform }}-${{ steps.go.outputs.go-version }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-release-${{ matrix.platform }}-${{ steps.go.outputs.go-version }}-
 
       - name: Build x-ui
         run: |
@@ -133,6 +154,17 @@ jobs:
           mv xray xray-linux-${{ matrix.platform }}
           cd ../..
           
+      # Only main saves, so tag runs reuse its caches instead of filling the
+      # cache storage with entries no later run can restore.
+      - name: Save Go cache
+        if: github.ref == 'refs/heads/main' && steps.go-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
+
       - name: Package
         run: tar -zcvf x-ui-linux-${{ matrix.platform }}.tar.gz x-ui
 
@@ -228,3 +260,88 @@ jobs:
           asset_name: x-ui-windows-amd64.zip
           overwrite: true
           prerelease: true
+
+  # =================================
+  #  Docker Image
+  # =================================
+  # The image packages the static binaries the build job produced. Building
+  # from source here would compile every platform under QEMU emulation, which
+  # takes the better part of an hour.
+  docker:
+    name: Docker image
+    needs: build
+    if: |
+      (github.event_name == 'push' && startsWith(github.ref, 'refs/tags/')) ||
+      (github.event_name == 'workflow_dispatch' && inputs.docker)
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-24.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Download build artifacts
+        uses: actions/download-artifact@v8
+        with:
+          pattern: x-ui-linux-*
+          path: artifacts
+
+      # Lays out one directory per image platform; Dockerfile.release finds it
+      # as TARGETARCH followed by TARGETVARIANT (amd64, arm64, armv7, armv6,
+      # 386). The panel runs xray-linux-<GOARCH>, and GOARCH is "arm" for every
+      # 32-bit ARM variant.
+      - name: Prepare image contents
+        run: |
+          for platform in amd64 arm64 armv7 armv6 386; do
+            dir=docker-dist/$platform
+            mkdir -p "$dir"
+            tar -xzf "artifacts/x-ui-linux-$platform/x-ui-linux-$platform.tar.gz" -C "$dir" --strip-components=1 x-ui/x-ui x-ui/bin
+            case "$platform" in
+              armv7 | armv6) mv "$dir/bin/xray-linux-$platform" "$dir/bin/xray-linux-arm" ;;
+            esac
+            rm -f "$dir/bin/LICENSE" "$dir/bin/README.md"
+          done
+          find docker-dist -type f | sort
+
+      - name: Docker meta
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: |
+            alireza7/x-ui
+            ghcr.io/alireza0/x-ui
+          tags: |
+            type=ref,event=branch
+            type=ref,event=tag
+            type=pep440,pattern={{version}}
+
+      # Still needed: the image's apk step runs on each target platform.
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKER_HUB_USERNAME }}
+          password: ${{ secrets.DOCKER_HUB_TOKEN }}
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push
+        uses: docker/build-push-action@v6
+        with:
+          context: docker-dist
+          file: Dockerfile.release
+          push: true
+          platforms: linux/amd64, linux/arm64, linux/arm/v7, linux/arm/v6, linux/386
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}

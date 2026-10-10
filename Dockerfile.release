@@ -1,0 +1,16 @@
+# Packages the binaries the release workflow already built (see the docker job
+# in .github/workflows/release.yml); the build context holds one directory per
+# platform. To build the image from source, use Dockerfile.
+FROM alpine
+LABEL org.opencontainers.image.authors="alireza7@gmail.com"
+ENV TZ=Asia/Tehran
+WORKDIR /app
+
+RUN apk add --no-cache ca-certificates tzdata libcap nftables
+
+ARG TARGETARCH
+ARG TARGETVARIANT
+COPY ${TARGETARCH}${TARGETVARIANT}/ /app/
+
+VOLUME [ "/etc/x-ui" ]
+CMD [ "./x-ui" ]

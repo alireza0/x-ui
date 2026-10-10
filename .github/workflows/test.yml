@@ -27,9 +27,24 @@ jobs:
         uses: actions/checkout@v5
 
       - name: Install Go
+        id: go
         uses: actions/setup-go@v6
         with:
           go-version-file: go.mod
+          # setup-go's cache key would be the one the amd64 release build uses,
+          # so whichever ran first would leave the other without its build cache.
+          cache: false
+
+      - name: Restore Go cache
+        id: go-cache
+        uses: actions/cache/restore@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: go-test-${{ steps.go.outputs.go-version }}-${{ hashFiles('go.sum') }}
+          restore-keys: |
+            go-test-${{ steps.go.outputs.go-version }}-
 
       - name: Check formatting
         run: |
@@ -52,6 +67,17 @@ jobs:
       # race is a real class of bug here rather than a theoretical one.
       - name: Test with the race detector
         run: go test -race ./... -count=1
+
+      # Only main saves; pull requests restore its entry, and an entry a pull
+      # request saved would be visible to that pull request alone.
+      - name: Save Go cache
+        if: github.ref == 'refs/heads/main' && steps.go-cache.outputs.cache-hit != 'true'
+        uses: actions/cache/save@v6
+        with:
+          path: |
+            ~/.cache/go-build
+            ~/go/pkg/mod
+          key: ${{ steps.go-cache.outputs.cache-primary-key }}
 
       # go.mod and go.sum must already be in the state `go mod tidy` produces,
       # or a dependency change silently drifts from what is committed.
