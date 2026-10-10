@@ -908,33 +908,50 @@ class UdpMask extends CommonClass {
         }
     }
 
-    // Xray-core v26.9.30 turned xDNS domains and resolvers into objects. Older
-    // configs carry a bare "domain", or plain string lists where a resolver reads
-    // "name[:type]+udp://addr".
+    // Xray-core v26.10.10 gives each xDNS domain a list of "names" and takes
+    // resolvers as {"addrs": ["udp://host:port", ...]}. Older configs carry
+    // v26.9.30's {"name"} and {"type", "settings": {"addr"}} objects, or plain
+    // strings where a resolver reads "name[:type]+udp://addr". The form keeps
+    // the resolvers as one flat list of addresses.
     static xdnsSettings(settings = {}) {
-        const domains = [];
+        const domains = UdpMask.xdnsDomains(settings);
         const resolvers = [];
-        const addDomain = (name, types = [16]) => {
-            const known = domains.find(d => d.name === name);
-            if (known) known.types = [...new Set([...(known.types || []), ...types])];
-            else if (name) domains.push({ name, types });
+        const addType = (name, type) => {
+            const known = domains.find(d => d.names.includes(name));
+            if (!known) domains.push({ names: [name], types: [type] });
+            else if (!known.types.includes(type)) known.types.push(type);
         };
-        for (const d of [].concat(settings.domain || [], settings.domains || [])) {
-            if (typeof d === 'string') addDomain(d);
-            else if (d && typeof d === 'object') domains.push(d);
-        }
         for (const r of settings.resolvers || []) {
             if (typeof r === 'string') {
-                const [head, addr] = r.split('+udp://');
-                if (!addr) continue;
-                const [name, type] = head.split(':');
-                addDomain(name, [UdpMask.XdnsTypes[(type || 'txt').toUpperCase()] || 16]);
-                resolvers.push({ type: 'udp', settings: { addr } });
-            } else if (r && typeof r === 'object') {
-                resolvers.push({ type: r.type || 'udp', settings: { addr: r.settings?.addr || '' } });
+                const plus = r.indexOf('+');
+                const addr = r.slice(plus + 1);
+                if (plus < 0 || !addr.includes('://')) continue;
+                const [name, type] = r.slice(0, plus).split(':');
+                if (name) addType(name, UdpMask.XdnsTypes[(type || 'txt').toUpperCase()] || 16);
+                resolvers.push(addr);
+            } else if (Array.isArray(r?.addrs)) {
+                resolvers.push(...r.addrs);
+            } else if (r?.settings?.addr) {
+                resolvers.push(`${r.type || 'udp'}://${r.settings.addr}`);
             }
         }
         return { domains, resolvers, extraPoll: settings.extraPoll ?? 0 };
+    }
+
+    static xdnsDomains(settings = {}) {
+        return [].concat(settings.domain || [], settings.domains || []).map(d => {
+            if (typeof d === 'string') return { names: [d], types: [] };
+            if (!d || typeof d !== 'object') return null;
+            const { name, ...rest } = d;
+            return { names: d.names || (name ? [name] : []), ...rest, types: d.types || [] };
+        }).filter(Boolean);
+    }
+
+    // Empty record types leave the choice to the core: TXT on the client, all
+    // four on the server.
+    static xdnsDomainsToJson(domains = []) {
+        return domains.map(d => Object.fromEntries(Object.entries(d).filter(([, v]) =>
+            !(v === '' || v == null || (Array.isArray(v) && v.length === 0)))));
     }
 
     // Realm settings without the parts left at their defaults. The TLS config for
@@ -1079,6 +1096,13 @@ class UdpMask extends CommonClass {
         if (this.type === 'noise') {
             settings = { ...settings, noise: (settings.noise || []).map(n => UdpMask.noiseItemToJson(n)) };
             if (!settings.reset) delete settings.reset;
+        }
+        if (this.type === 'xdns') {
+            settings = {
+                ...settings,
+                domains: UdpMask.xdnsDomainsToJson(settings.domains),
+                resolvers: settings.resolvers?.length ? [{ addrs: settings.resolvers }] : [],
+            };
         }
         if (['xdns', 'xicmp', 'udphop'].includes(this.type)) {
             settings = Object.fromEntries(Object.entries(settings).filter(([, v]) =>

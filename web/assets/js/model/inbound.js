@@ -1415,12 +1415,23 @@ class UdpMask extends XrayCommonClass {
         }
     }
 
-    // Xray-core v26.9.30 turned xDNS domains into objects; older configs carry a
-    // bare "domain" or a list of names.
+    // Xray-core v26.10.10 gives each xDNS domain a list of "names". Older
+    // configs carry v26.9.30's {"name"} objects, a bare "domain" or a list of
+    // names.
     static xdnsDomains(settings = {}) {
-        return [].concat(settings.domain || [], settings.domains || [])
-            .map(d => typeof d === 'string' ? { name: d, types: [16] } : d)
-            .filter(d => d && d.name !== undefined);
+        return [].concat(settings.domain || [], settings.domains || []).map(d => {
+            if (typeof d === 'string') return { names: [d], types: [] };
+            if (!d || typeof d !== 'object') return null;
+            const { name, ...rest } = d;
+            return { names: d.names || (name ? [name] : []), ...rest, types: d.types || [] };
+        }).filter(Boolean);
+    }
+
+    // Empty record types leave the choice to the core, which answers all four
+    // on the server.
+    static xdnsDomainsToJson(domains = []) {
+        return domains.map(d => Object.fromEntries(Object.entries(d).filter(([, v]) =>
+            !(v === '' || v == null || (Array.isArray(v) && v.length === 0)))));
     }
 
     // Realm settings without the parts left at their defaults. The TLS config for
@@ -1564,6 +1575,9 @@ class UdpMask extends XrayCommonClass {
         }
         if (this.type === 'noise') {
             settings = { reset: settings.reset || undefined, noise: (settings.noise || []).map(n => UdpMask.noiseItemToJson(n)) };
+        }
+        if (this.type === 'xdns') {
+            settings = { domains: UdpMask.xdnsDomainsToJson(settings.domains) };
         }
         if (this.type === 'xicmp') {
             settings = { dgram: settings.dgram || undefined, ips: settings.ips?.length ? settings.ips : undefined };

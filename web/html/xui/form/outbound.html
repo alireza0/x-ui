@@ -914,26 +914,18 @@
         </template>
         <template v-if="mask.type === 'xdns'">
             {{template "form/xdnsDomains" "mask"}}
-            <a-form-item label='{{ i18n "pages.inbounds.stream.finalmask.resolvers" }}'>
-                <a-icon type="plus" type="primary" size="small"
-                    @click="mask.settings.resolvers.push({type: 'udp', settings: {addr: ''}})" />
+            <a-form-item>
+                <template slot="label">
+                    <a-tooltip>
+                        <template slot="title">
+                            <span>{{ i18n "pages.inbounds.stream.finalmask.resolversDesc" }}</span>
+                        </template>
+                        {{ i18n "pages.inbounds.stream.finalmask.resolvers" }} <a-icon type="question-circle"></a-icon>
+                    </a-tooltip>
+                </template>
+                <a-select mode="tags" v-model="mask.settings.resolvers" :token-separators="[',', ' ']"
+                    :dropdown-class-name="themeSwitcher.currentTheme" placeholder="udp://1.1.1.1:53"></a-select>
             </a-form-item>
-            <template v-for="(r, rIdx) in mask.settings.resolvers" :key="'resolver-' + rIdx">
-                <a-divider :style="{ margin: '0' }"> {{ i18n "pages.inbounds.stream.finalmask.resolvers" }} [[ rIdx + 1 ]]
-                    <a-icon type="delete"
-                        @click="() => mask.settings.resolvers.splice(rIdx, 1)"
-                        :style="{ color: 'rgb(255, 77, 79)', cursor: 'pointer' }"></a-icon>
-                </a-divider>
-                <a-form-item label='{{ i18n "pages.inbounds.stream.hysteria.type" }}'>
-                    <a-select v-model="r.type" :dropdown-class-name="themeSwitcher.currentTheme">
-                        <a-select-option value="udp">UDP</a-select-option>
-                        <a-select-option value="tcp">TCP</a-select-option>
-                    </a-select>
-                </a-form-item>
-                <a-form-item label='{{ i18n "address" }}'>
-                    <a-input v-model.trim="r.settings.addr" placeholder="1.1.1.1:53"></a-input>
-                </a-form-item>
-            </template>
             <a-form-item label='{{ i18n "pages.inbounds.stream.finalmask.extraPoll" }}'>
                 <a-input-number v-model.number="mask.settings.extraPoll" :min="0" :max="3"></a-input-number>
             </a-form-item>

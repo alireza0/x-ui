@@ -78,3 +78,52 @@ func TestMoveUDPHopToMaskWithoutPorts(t *testing.T) {
 		t.Fatalf("expected nothing left, got %v", stream)
 	}
 }
+
+func TestUpgradeXDNSMasksFromV26930(t *testing.T) {
+	stream := streamFrom(t, `{"finalmask":{"udp":[
+		{"type":"salamander","settings":{"password":"x"}},
+		{"type":"xdns","settings":{
+			"domains":[{"name":"t.example.com","types":[16,1],"edns0":1232}],
+			"resolvers":[{"type":"udp","settings":{"addr":"1.1.1.1:53"}},{"type":"tcp","settings":{"addr":"8.8.8.8:53"}}],
+			"extraPoll":2}}]}}`)
+	if !UpgradeXDNSMasks(stream) {
+		t.Fatal("reported no change")
+	}
+	want := streamFrom(t, `{"finalmask":{"udp":[
+		{"type":"salamander","settings":{"password":"x"}},
+		{"type":"xdns","settings":{
+			"domains":[{"names":["t.example.com"],"types":[16,1],"edns0":1232}],
+			"resolvers":[{"addrs":["udp://1.1.1.1:53","tcp://8.8.8.8:53"]}],
+			"extraPoll":2}}]}}`)
+	if !reflect.DeepEqual(stream, want) {
+		t.Fatalf("got %v, want %v", stream, want)
+	}
+}
+
+func TestUpgradeXDNSMasksFromStrings(t *testing.T) {
+	stream := streamFrom(t, `{"finalmask":{"udp":[{"type":"xdns","settings":{
+		"domain":"a.example.com",
+		"resolvers":["a.example.com:a+udp://1.1.1.1:53","b.example.com+udp://9.9.9.9:53","broken"]}}]}}`)
+	if !UpgradeXDNSMasks(stream) {
+		t.Fatal("reported no change")
+	}
+	want := streamFrom(t, `{"finalmask":{"udp":[{"type":"xdns","settings":{
+		"domains":[{"names":["a.example.com"],"types":[1]},{"names":["b.example.com"],"types":[16]}],
+		"resolvers":[{"addrs":["udp://1.1.1.1:53","udp://9.9.9.9:53"]}]}}]}}`)
+	if !reflect.DeepEqual(stream, want) {
+		t.Fatalf("got %v, want %v", stream, want)
+	}
+}
+
+func TestUpgradeXDNSMasksKeepsNewSchema(t *testing.T) {
+	const raw = `{"finalmask":{"udp":[{"type":"xdns","settings":{
+		"domains":[{"names":["a.example.com","b.example.com"]}],
+		"resolvers":[{"addrs":["1.1.1.1","tcp://8.8.8.8"]}]}}]}}`
+	stream := streamFrom(t, raw)
+	if UpgradeXDNSMasks(stream) {
+		t.Fatal("rewrote a mask already in the new schema")
+	}
+	if !reflect.DeepEqual(stream, streamFrom(t, raw)) {
+		t.Fatalf("changed to %v", stream)
+	}
+}
