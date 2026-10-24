@@ -57,6 +57,36 @@ func (s *RoutingRuleService) GetRoutingMeta() (map[string]interface{}, error) {
 	return meta, nil
 }
 
+// GetTemplateInboundTags returns the tags that act as inbounds in routing but
+// come from the xray template: its own inbounds and the DNS module's tag.
+func (s *RoutingRuleService) GetTemplateInboundTags() ([]string, error) {
+	templateConfig, err := s.settingService.GetXrayConfigTemplate()
+	if err != nil {
+		return nil, err
+	}
+	var cfg struct {
+		Inbounds []struct {
+			Tag string `json:"tag"`
+		} `json:"inbounds"`
+		DNS *struct {
+			Tag string `json:"tag"`
+		} `json:"dns"`
+	}
+	if err := json.Unmarshal([]byte(templateConfig), &cfg); err != nil {
+		return nil, err
+	}
+	tags := []string{}
+	for _, inbound := range cfg.Inbounds {
+		if inbound.Tag != "" {
+			tags = append(tags, inbound.Tag)
+		}
+	}
+	if cfg.DNS != nil && cfg.DNS.Tag != "" {
+		tags = append(tags, cfg.DNS.Tag)
+	}
+	return tags, nil
+}
+
 // SaveAllRules replaces the whole set of routing rules at once.
 // Rules are first pushed to the running xray-core via API; only if xray accepts
 // them are they persisted to the database. The slice order defines the priority.

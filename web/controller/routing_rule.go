@@ -2,6 +2,7 @@ package controller
 
 import (
 	"encoding/json"
+	"slices"
 
 	"github.com/alireza0/x-ui/database/model"
 	"github.com/alireza0/x-ui/web/service"
@@ -37,13 +38,20 @@ func jsonStringArray(s string) []string {
 }
 
 func (a *RoutingRuleController) getRefs(c *gin.Context) {
-	inboundTags, _ := a.inboundService.GetInboundTags()
+	inboundTagsJson, _ := a.inboundService.GetInboundTags()
+	inboundTags := jsonStringArray(inboundTagsJson)
+	templateInboundTags, _ := a.routingRuleService.GetTemplateInboundTags()
+	for _, tag := range templateInboundTags {
+		if !slices.Contains(inboundTags, tag) {
+			inboundTags = append(inboundTags, tag)
+		}
+	}
 	clientReverseTags, _ := a.inboundService.GetClientReverseTags()
 	outboundTags, _ := a.outboundService.GetOutboundTags()
 	outboundReverseTags, _ := a.outboundService.GetOutboundReverseTags()
 	meta, _ := a.routingRuleService.GetRoutingMeta()
 	jsonObj(c, map[string]any{
-		"inboundTags":         jsonStringArray(inboundTags),
+		"inboundTags":         inboundTags,
 		"clientReverseTags":   jsonStringArray(clientReverseTags),
 		"outboundTags":        jsonStringArray(outboundTags),
 		"outboundReverseTags": jsonStringArray(outboundReverseTags),
