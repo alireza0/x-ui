@@ -160,3 +160,18 @@ func TestTLSConfigWithoutDomainServesEveryone(t *testing.T) {
 		t.Error("no domain was configured, so no SNI callback should be installed")
 	}
 }
+
+// Clients send no SNI when they connect by IP, so with the domain set to the
+// server's address every handshake was refused.
+func TestTLSConfigServesAnIPDomain(t *testing.T) {
+	for _, domain := range []string{"192.0.2.1", "2001:db8::1"} {
+		config := NewTLSConfig(testCertificate(t, "panel.example.com"), domain)
+
+		if err, certificates := handshake(t, config, ""); err != nil || certificates == 0 {
+			t.Errorf("domain %q: handshake without SNI failed: %v", domain, err)
+		}
+		if err, _ := handshake(t, config, "scanner.example.net"); err == nil {
+			t.Errorf("domain %q: handshake with a foreign SNI succeeded, want it rejected", domain)
+		}
+	}
+}
